@@ -1,0 +1,191 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap");
+@import "tailwindcss";
+
+/*
+ * Same tokens as the marketing site (src/index.css) so the two read as one
+ * product. Keep them in step if the brand palette changes.
+ */
+@theme {
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Plus Jakarta Sans", sans-serif;
+
+  --color-gold-200: #e8dcc0;
+  --color-gold-300: #d8c397;
+  --color-gold-400: #c5a66b;
+  --color-gold-500: #b58d4c;
+  --color-gold-600: #9e753b;
+
+  --color-luxury-black: #0a0a0b;
+  --color-luxury-charcoal: #121214;
+  --color-luxury-gray: #1a1a1e;
+  --color-luxury-gold: #c5a66b;
+  --color-luxury-champagne: #e8dcc0;
+  --color-luxury-ivory: #faf8f5;
+}
+
+:root {
+  --sidebar-w: 260px;
+  --topbar-h: 68px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply font-sans bg-luxury-black text-luxury-ivory antialiased;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif tracking-wide;
+    overflow-wrap: break-word;
+  }
+
+  /* iOS zooms a focused control rendered below 16px. */
+  @media (max-width: 767px) {
+    input, select, textarea {
+      font-size: max(16px, 1em);
+    }
+  }
+
+  img, svg, video {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Surfaces ---------------------------------------------------------------- */
+
+.panel {
+  background: rgba(20, 20, 22, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.panel-hover {
+  @apply transition-colors duration-300 hover:border-luxury-gold/25 hover:bg-luxury-charcoal/80;
+}
+
+.gradient-text-gold {
+  background: linear-gradient(135deg, #faf8f5 0%, #e8dcc0 50%, #c5a66b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Focus ring used by every interactive control. */
+.focus-gold {
+  @apply outline-none focus-visible:ring-2 focus-visible:ring-luxury-gold/60 focus-visible:ring-offset-0;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Scrollbar --------------------------------------------------------------- */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #26262c;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #c5a66b;
+}
+
+/*
+ * Settings preview. Renders admin-authored HTML on a light surface so it
+ * reads the way a visitor will see it, rather than inheriting the dark shell.
+ */
+.settings-preview h1,
+.settings-preview h2,
+.settings-preview h3 {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  color: #2e2a24;
+  margin: 1.4em 0 0.5em;
+  line-height: 1.3;
+}
+
+.settings-preview h1 { font-size: 1.7rem; }
+.settings-preview h2 { font-size: 1.35rem; }
+.settings-preview h3 { font-size: 1.1rem; }
+.settings-preview > :first-child { margin-top: 0; }
+
+.settings-preview p,
+.settings-preview li {
+  font-size: 0.9rem;
+  line-height: 1.75;
+  color: #4a443b;
+  margin-bottom: 0.85em;
+}
+
+.settings-preview ul,
+.settings-preview ol {
+  padding-left: 1.4rem;
+  margin-bottom: 1em;
+}
+
+.settings-preview ul { list-style: disc; }
+.settings-preview ol { list-style: decimal; }
+.settings-preview strong { color: #2e2a24; font-weight: 600; }
+
+.settings-preview a {
+  color: #9e753b;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+
+/* Skeleton shimmer while data loads. */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.6s infinite;
+}
