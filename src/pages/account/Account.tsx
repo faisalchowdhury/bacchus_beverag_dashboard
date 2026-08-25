@@ -8,7 +8,8 @@ import { useToast } from "../../components/Toast";
 import Field, { Label, inputClass } from "../../components/Field";
 
 const MIN_PASSWORD_LENGTH = 8;
-const API_BASE = import.meta.env.VITE_BACKEND_BASE ?? "http://localhost:8080";
+const API_BASE =
+  import.meta.env.VITE_BACKEND_BASE ?? "https://faisal6001.ssh.bd";
 
 export default function Account() {
   const { user, refresh } = useAuth();
@@ -78,7 +79,9 @@ export default function Account() {
     event.preventDefault();
 
     if (newPassword.length < MIN_PASSWORD_LENGTH) {
-      toast.error(`New password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      toast.error(
+        `New password must be at least ${MIN_PASSWORD_LENGTH} characters.`,
+      );
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -125,8 +128,12 @@ export default function Account() {
             <UserCog size={17} />
           </div>
           <div>
-            <h2 className="font-serif text-lg font-bold leading-tight">Your profile</h2>
-            <p className="text-[11px] text-white/35">Name, contact details and avatar.</p>
+            <h2 className="font-serif text-lg font-bold leading-tight">
+              Your profile
+            </h2>
+            <p className="text-[11px] text-white/35">
+              Name, contact details and avatar.
+            </p>
           </div>
         </div>
 
@@ -228,13 +235,18 @@ export default function Account() {
       </form>
 
       {/* Password */}
-      <form onSubmit={onChangePassword} className="panel rounded-2xl p-5 sm:p-6">
+      <form
+        onSubmit={onChangePassword}
+        className="panel rounded-2xl p-5 sm:p-6"
+      >
         <div className="flex items-center gap-2.5 mb-6">
           <div className="w-9 h-9 rounded-xl bg-luxury-gold/15 text-luxury-gold flex items-center justify-center flex-shrink-0">
             <KeyRound size={17} />
           </div>
           <div>
-            <h2 className="font-serif text-lg font-bold leading-tight">Password</h2>
+            <h2 className="font-serif text-lg font-bold leading-tight">
+              Password
+            </h2>
             <p className="text-[11px] text-white/35">
               You stay signed in after changing it.
             </p>

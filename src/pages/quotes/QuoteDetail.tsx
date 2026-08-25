@@ -15,6 +15,9 @@ import { fetchQuote, updateQuote } from "../../api/quotes";
 import { apiErrorMessage } from "../../api/axiosInstance";
 import StatusBadge from "../../components/StatusBadge";
 import EmptyState from "../../components/EmptyState";
+import ContractActions from "../../components/ContractActions";
+import ContractPreview from "../../components/ContractPreview";
+import { useQuoteContract } from "../../hooks/useQuoteContract";
 import { formatDate, formatDateTime, formatTime, money } from "../../utils/format";
 import { QUOTE_STATUSES, type QuoteDetail as Quote, type QuoteStatus } from "../../types";
 
@@ -67,6 +70,8 @@ export default function QuoteDetail() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const contract = useQuoteContract();
 
   useEffect(() => {
     let cancelled = false;
@@ -167,13 +172,23 @@ export default function QuoteDetail() {
           </p>
         </div>
 
-        <div className="text-right flex-shrink-0">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-white/35 font-semibold mb-1">
-            Estimated total
+        <div className="flex flex-col items-end gap-4 flex-shrink-0">
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-white/35 font-semibold mb-1">
+              Estimated total
+            </div>
+            <div className="font-serif text-3xl sm:text-4xl font-bold text-luxury-gold tabular-nums leading-none">
+              {money(b.grandTotal)}
+            </div>
           </div>
-          <div className="font-serif text-3xl sm:text-4xl font-bold text-luxury-gold tabular-nums leading-none">
-            {money(b.grandTotal)}
-          </div>
+
+          <ContractActions
+            variant="labelled"
+            clientName={quote.customerName}
+            busy={contract.busyId === quote._id}
+            onView={() => contract.openPreview(quote._id, quote.customerName)}
+            onDownload={() => contract.download(quote._id, quote.customerName)}
+          />
         </div>
       </div>
 
@@ -518,6 +533,12 @@ export default function QuoteDetail() {
           </Section>
         </div>
       </div>
+
+      <ContractPreview
+        preview={contract.preview}
+        onClose={contract.closePreview}
+        onDownload={contract.downloadPreview}
+      />
     </div>
   );
 }
