@@ -10,7 +10,7 @@ import {
 
 import { fetchMe, login as loginRequest, logout as clearSession } from "../api/auth";
 import { getToken } from "../api/axiosInstance";
-import type { AdminUser } from "../types";
+import { hasDashboardAccess, type AdminUser } from "../types";
 
 interface AuthState {
   user: AdminUser | null;
@@ -43,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     fetchMe()
       .then((me) => {
-        if (!cancelled) setUser(me.role === "admin" ? me : null);
+        if (!cancelled) setUser(hasDashboardAccess(me) ? me : null);
       })
       .catch(() => {
         if (!cancelled) setUser(null);

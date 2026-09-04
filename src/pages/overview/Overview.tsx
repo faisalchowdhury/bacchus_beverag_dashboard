@@ -7,16 +7,21 @@ import {
   FileText,
   Inbox,
   TrendingUp,
-  Users,
+  CheckCircle2,
 } from "lucide-react";
 
 import { fetchQuoteStats } from "../../api/quotes";
 import { apiErrorMessage } from "../../api/axiosInstance";
 import StatCard from "../../components/StatCard";
+import AcceptanceBadge from "../../components/AcceptanceBadge";
 import StatusBadge from "../../components/StatusBadge";
 import EmptyState from "../../components/EmptyState";
 import { formatDate, money, moneyCompact, relativeTime } from "../../utils/format";
-import { QUOTE_STATUSES, type QuoteStats } from "../../types";
+import {
+  QUOTE_ACCEPTANCE_STATUSES,
+  QUOTE_STATUSES,
+  type QuoteStats,
+} from "../../types";
 
 export default function Overview() {
   const [stats, setStats] = useState<QuoteStats | null>(null);
@@ -96,18 +101,52 @@ export default function Overview() {
           hint="Combined estimate across every quote"
         />
         <StatCard
+          label="Accepted value"
+          value={moneyCompact(stats.acceptedValue)}
+          icon={CheckCircle2}
+          hint={`${stats.acceptedCount} accepted · ${stats.acceptanceRate}% of all quotes`}
+        />
+        <StatCard
           label="Average quote"
           value={moneyCompact(stats.averageValue)}
           icon={TrendingUp}
-          hint="Mean grand total"
-        />
-        <StatCard
-          label="Guests quoted"
-          value={stats.totalGuests.toLocaleString("en-US")}
-          icon={Users}
-          hint="Across all enquiries"
+          hint={`${stats.totalGuests.toLocaleString("en-US")} guests quoted`}
         />
       </div>
+
+      {/* What clients have done — the "ready to book" signal */}
+      <section>
+        <h2 className="font-serif text-lg font-bold mb-4">Client acceptance</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {QUOTE_ACCEPTANCE_STATUSES.map((status) => {
+            const count = stats.acceptanceCounts?.[status] ?? 0;
+            const share = stats.total ? Math.round((count / stats.total) * 100) : 0;
+            return (
+              <Link
+                key={status}
+                to={`/quotes?acceptanceStatus=${status}`}
+                className="panel panel-hover rounded-2xl p-5 focus-gold block"
+              >
+                <AcceptanceBadge status={status} />
+                <div className="font-serif text-3xl font-bold mt-3 tabular-nums">
+                  {count}
+                </div>
+                <div className="mt-3 h-1 rounded-full bg-white/5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-[width] duration-500 ${
+                      status === "Accepted" ? "bg-emerald-400/70" : "bg-white/20"
+                    }`}
+                    style={{ width: `${share}%` }}
+                  />
+                </div>
+                <p className="text-[10px] text-white/30 mt-2 font-medium tabular-nums">
+                  {share}% of all quotes
+                </p>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
 
       {/* Pipeline breakdown */}
       <section>

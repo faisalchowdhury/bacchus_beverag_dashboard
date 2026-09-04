@@ -4,19 +4,32 @@ import {
   AlertTriangle,
   ArrowLeft,
   Check,
+  CheckCircle2,
   Loader2,
   Mail,
   MailX,
   Phone,
   Save,
+  Send,
 } from "lucide-react";
 
-import { fetchQuote, updateQuote } from "../../api/quotes";
+import { fetchQuote, resendAcceptanceLink, updateQuote } from "../../api/quotes";
 import { apiErrorMessage } from "../../api/axiosInstance";
 import StatusBadge from "../../components/StatusBadge";
+import AcceptanceBadge from "../../components/AcceptanceBadge";
 import EmptyState from "../../components/EmptyState";
+import ContractActions from "../../components/ContractActions";
+import ContractPreview from "../../components/ContractPreview";
+import { useQuoteContract } from "../../hooks/useQuoteContract";
 import { formatDate, formatDateTime, formatTime, money } from "../../utils/format";
-import { QUOTE_STATUSES, type QuoteDetail as Quote, type QuoteStatus } from "../../types";
+import { useAuth } from "../../auth/AuthContext";
+import { useToast } from "../../components/Toast";
+import {
+  QUOTE_STATUSES,
+  isAdmin,
+  type QuoteDetail as Quote,
+  type QuoteStatus,
+} from "../../types";
 
 /* ── Layout helpers ────────────────────────────────────────────────── */
 
@@ -67,6 +80,12 @@ export default function QuoteDetail() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const contract = useQuoteContract();
+  const toast = useToast();
+  const { user } = useAuth();
+
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -161,19 +180,30 @@ export default function QuoteDetail() {
           <h1 className="font-serif text-2xl sm:text-3xl font-bold flex items-center gap-3 flex-wrap">
             {quote.customerName}
             <StatusBadge status={quote.status} size="md" />
+            <AcceptanceBadge status={quote.acceptanceStatus} size="md" />
           </h1>
           <p className="text-xs text-white/35 mt-1.5">
             Submitted {formatDateTime(quote.submittedAt)}
           </p>
         </div>
 
-        <div className="text-right flex-shrink-0">
-          <div className="text-[10px] uppercase tracking-[0.2em] text-white/35 font-semibold mb-1">
-            Estimated total
+        <div className="flex flex-col items-end gap-4 flex-shrink-0">
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-[0.2em] text-white/35 font-semibold mb-1">
+              Estimated total
+            </div>
+            <div className="font-serif text-3xl sm:text-4xl font-bold text-luxury-gold tabular-nums leading-none">
+              {money(b.grandTotal)}
+            </div>
           </div>
-          <div className="font-serif text-3xl sm:text-4xl font-bold text-luxury-gold tabular-nums leading-none">
-            {money(b.grandTotal)}
-          </div>
+
+          <ContractActions
+            variant="labelled"
+            clientName={quote.customerName}
+            busy={contract.busyId === quote._id}
+            onView={() => contract.openPreview(quote._id, quote.customerName)}
+            onDownload={() => contract.download(quote._id, quote.customerName)}
+          />
         </div>
       </div>
 
@@ -444,6 +474,106 @@ export default function QuoteDetail() {
 
         {/* ── Right: the admin's working panel ─────────────────────── */}
         <div className="xl:sticky xl:top-[calc(var(--topbar-h)+1.5rem)] space-y-5">
+          <Section title="Client acceptance">
+            {quote.acceptanceStatus === "Accepted" ? (
+              <>
+                <div className="flex items-start gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.07] p-4 mb-5">
+                  <CheckCircle2
+                    size={16}
+                    className="text-emerald-400 mt-0.5 flex-shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-emerald-200">
+                      Accepted by the client
+                    </p>
+                    <p className="text-[11px] text-white/50 leading-relaxed mt-1">
+                      {formatDateTime(quote.acceptedAt)}
+                    </p>
+                  </div>
+                </div>
+
+                <Facts
+                  rows={[
+                    ...(quote.acceptanceNotifiedEmails?.length
+                      ? ([
+                          [
+                            "Contract sent to",
+                            <span className="text-[12px] leading-relaxed">
+                              {quote.acceptanceNotifiedEmails.join(", ")}
+                            </span>,
+                          ],
+                        ] as [string, ReactNode][])
+                      : ([["Contract sent to", "Nobody — the email failed"]] as [
+                          string,
+                          ReactNode,
+                        ][])),
+                    ...(quote.acceptanceIp
+                      ? ([
+                          [
+                            "Accepted from",
+                            <span className="font-mono text-[11px]">
+                              {quote.acceptanceIp}
+                            </span>,
+                          ],
+                        ] as [string, ReactNode][])
+                      : []),
+                  ]}
+                />
+              </>
+            ) : (
+              <>
+                <p className="text-[12px] text-white/50 leading-relaxed mb-4">
+                  This client has not accepted yet. Their estimate email carries an
+                  Accept button; accepting notifies the team and attaches the contract
+                  automatically.
+                </p>
+
+                {quote.acceptanceTokenExpiresAt && (
+                  <p className="text-[11px] text-white/30 leading-relaxed mb-4">
+                    Their acceptance link is valid until{" "}
+                    {formatDate(quote.acceptanceTokenExpiresAt)}.
+                  </p>
+                )}
+
+                {isAdmin(user) && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setResending(true);
+                      try {
+                        const result = await resendAcceptanceLink(quote._id);
+                        toast[result.emailSent ? "success" : "error"](
+                          result.emailSent
+                            ? `The estimate has been resent to ${quote.customerEmail}.`
+                            : "A new link was issued, but the email could not be sent.",
+                        );
+                        setQuote(await fetchQuote(quote._id));
+                      } catch (err) {
+                        toast.error(
+                          apiErrorMessage(err, "Could not resend the estimate."),
+                        );
+                      } finally {
+                        setResending(false);
+                      }
+                    }}
+                    disabled={resending}
+                    className="w-full flex items-center justify-center gap-2 py-3 border border-white/10 rounded-full text-[11px] uppercase tracking-widest font-semibold text-white/65 hover:border-luxury-gold/40 hover:text-luxury-gold transition-colors focus-gold disabled:opacity-40"
+                  >
+                    {resending ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" /> Sending…
+                      </>
+                    ) : (
+                      <>
+                        <Send size={13} /> Resend estimate with a fresh link
+                      </>
+                    )}
+                  </button>
+                )}
+              </>
+            )}
+          </Section>
+
           <Section title="Manage">
             <label className="block text-[11px] uppercase tracking-wider text-white/35 font-medium mb-2.5">
               Status
@@ -518,6 +648,12 @@ export default function QuoteDetail() {
           </Section>
         </div>
       </div>
+
+      <ContractPreview
+        preview={contract.preview}
+        onClose={contract.closePreview}
+        onDownload={contract.downloadPreview}
+      />
     </div>
   );
 }

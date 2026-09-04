@@ -1,5 +1,5 @@
 import api, { clearToken, setToken } from "./axiosInstance";
-import type { AdminUser, ApiEnvelope } from "../types";
+import { DASHBOARD_ROLES, hasDashboardAccess, type AdminUser, type ApiEnvelope } from "../types";
 
 interface LoginResponse {
   user: AdminUser;
@@ -7,22 +7,22 @@ interface LoginResponse {
 }
 
 /**
- * Signs in against the shared auth endpoint, pinned to the admin role — the
- * same address can hold both a client and an admin account, and the dashboard
- * only ever wants the latter.
+ * Signs in against the shared auth endpoint, narrowed to the roles that may
+ * open the dashboard — the same address can hold a client account as well,
+ * and that one must never be what gets signed in here.
  */
 export async function login(email: string, password: string): Promise<AdminUser> {
   const { data } = await api.post<ApiEnvelope<LoginResponse>>("/api/v1/auth/login", {
     email,
     password,
-    role: "admin",
+    role: DASHBOARD_ROLES.join(","),
   });
 
   if (!data.success || !data.data?.token) {
     throw new Error(data.message || "Login failed.");
   }
 
-  if (data.data.user?.role !== "admin") {
+  if (!hasDashboardAccess(data.data.user)) {
     throw new Error("That account does not have dashboard access.");
   }
 

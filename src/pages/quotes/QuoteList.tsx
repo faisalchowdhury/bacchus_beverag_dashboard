@@ -4,7 +4,10 @@ import {
   AlertTriangle,
   ArrowUpDown,
   ChevronRight,
+  Download,
+  FileText,
   Inbox,
+  Loader2,
   MailX,
   Search,
 } from "lucide-react";
@@ -12,12 +15,18 @@ import {
 import { fetchQuotes } from "../../api/quotes";
 import { apiErrorMessage } from "../../api/axiosInstance";
 import StatusBadge from "../../components/StatusBadge";
+import AcceptanceBadge from "../../components/AcceptanceBadge";
 import EmptyState from "../../components/EmptyState";
 import Pagination from "../../components/Pagination";
+import ContractActions from "../../components/ContractActions";
+import ContractPreview from "../../components/ContractPreview";
+import { useQuoteContract } from "../../hooks/useQuoteContract";
 import { formatDate, money, relativeTime } from "../../utils/format";
 import {
+  QUOTE_ACCEPTANCE_STATUSES,
   QUOTE_STATUSES,
   type Pagination as PaginationMeta,
+  type QuoteAcceptanceStatus,
   type QuoteListItem,
   type QuoteStatus,
 } from "../../types";
@@ -42,6 +51,9 @@ export default function QuoteList() {
 
   const page = Number(params.get("page")) || 1;
   const status = (params.get("status") ?? "") as QuoteStatus | "";
+  const acceptanceStatus = (params.get("acceptanceStatus") ?? "") as
+    | QuoteAcceptanceStatus
+    | "";
   const barType = params.get("barType") ?? "";
   const sortBy = params.get("sortBy") ?? "submittedAt";
   const sortOrder = params.get("sortOrder") === "asc" ? "asc" : "desc";
@@ -52,6 +64,8 @@ export default function QuoteList() {
   const [meta, setMeta] = useState<PaginationMeta | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const contract = useQuoteContract();
 
   /** Writes a filter to the URL, resetting to page 1 unless paging. */
   const setParam = useCallback(
@@ -77,7 +91,16 @@ export default function QuoteList() {
     setLoading(true);
     setError(null);
 
-    fetchQuotes({ page, limit: 10, search, status, barType, sortBy, sortOrder })
+    fetchQuotes({
+      page,
+      limit: 10,
+      search,
+      status,
+      acceptanceStatus,
+      barType,
+      sortBy,
+      sortOrder,
+    })
       .then((result) => {
         if (cancelled) return;
         setQuotes(result.quotes);
@@ -89,9 +112,9 @@ export default function QuoteList() {
     return () => {
       cancelled = true;
     };
-  }, [page, search, status, barType, sortBy, sortOrder]);
+  }, [page, search, status, acceptanceStatus, barType, sortBy, sortOrder]);
 
-  const hasFilters = Boolean(search || status || barType);
+  const hasFilters = Boolean(search || status || acceptanceStatus || barType);
 
   const selectClass =
     "bg-luxury-black border border-white/10 rounded-lg px-3 py-2.5 text-xs text-white/70 focus:border-luxury-gold outline-none transition-colors cursor-pointer";
@@ -116,6 +139,20 @@ export default function QuoteList() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <select
+            value={acceptanceStatus}
+            onChange={(e) => setParam("acceptanceStatus", e.target.value)}
+            aria-label="Filter by what the client did"
+            className={selectClass}
+          >
+            <option value="">Accepted &amp; pending</option>
+            {QUOTE_ACCEPTANCE_STATUSES.map((option) => (
+              <option key={option} value={option}>
+                {option === "Pending" ? "Awaiting client" : option}
+              </option>
+            ))}
+          </select>
+
           <select
             value={status}
             onChange={(e) => setParam("status", e.target.value)}
@@ -208,18 +245,26 @@ export default function QuoteList() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/5">
-                  {["Client", "Event", "Guests", "Bar type", "Value", "Status", ""].map(
-                    (heading, i) => (
-                      <th
-                        key={heading || i}
-                        className={`px-5 py-3.5 text-[10px] uppercase tracking-widest text-white/35 font-semibold whitespace-nowrap ${
-                          i >= 2 && i <= 4 ? "text-right" : "text-left"
-                        }`}
-                      >
-                        {heading}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Client",
+                    "Event",
+                    "Guests",
+                    "Bar type",
+                    "Value",
+                    "Client",
+                    "Status",
+                    "Contract",
+                    "",
+                  ].map((heading, i) => (
+                    <th
+                      key={heading || i}
+                      className={`px-5 py-3.5 text-[10px] uppercase tracking-widest text-white/35 font-semibold whitespace-nowrap ${
+                        i >= 2 && i <= 4 ? "text-right" : "text-left"
+                      }`}
+                    >
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -261,10 +306,30 @@ export default function QuoteList() {
                       {money(quote.grandTotal)}
                     </td>
                     <td className="px-5 py-4">
+                      <AcceptanceBadge status={quote.acceptanceStatus} />
+                      {quote.acceptedAt && (
+                        <div className="text-[10px] text-emerald-400/50 mt-1.5">
+                          {relativeTime(quote.acceptedAt)}
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-5 py-4">
                       <StatusBadge status={quote.status} />
                       <div className="text-[10px] text-white/25 mt-1.5">
                         {relativeTime(quote.submittedAt)}
                       </div>
+                    </td>
+                    <td className="px-5 py-4">
+                      <ContractActions
+                        clientName={quote.customerName}
+                        busy={contract.busyId === quote._id}
+                        onView={() =>
+                          contract.openPreview(quote._id, quote.customerName)
+                        }
+                        onDownload={() =>
+                          contract.download(quote._id, quote.customerName)
+                        }
+                      />
                     </td>
                     <td className="px-5 py-4 text-right">
                       <Link
@@ -281,51 +346,87 @@ export default function QuoteList() {
             </table>
           </div>
 
-          {/* Mobile / tablet cards — a 7-column table cannot survive 400px */}
+          {/*
+            Mobile / tablet cards — an 8-column table cannot survive 400px.
+            The card is a div, not a Link: the contract buttons are interactive
+            and must not sit inside an anchor.
+          */}
           <div className="space-y-2.5 lg:hidden">
             {quotes.map((quote) => (
-              <Link
-                key={quote._id}
-                to={`/quotes/${quote._id}`}
-                className="panel panel-hover rounded-xl p-4 block focus-gold"
-              >
-                <div className="flex items-start justify-between gap-3 mb-2.5">
-                  <div className="min-w-0">
-                    <div className="font-medium text-sm flex items-center gap-2">
-                      <span className="truncate">{quote.customerName}</span>
-                      {!quote.clientEmailSent && (
-                        <MailX size={12} className="text-amber-400/80 flex-shrink-0" />
-                      )}
+              <div key={quote._id} className="panel panel-hover rounded-xl p-4">
+                <Link to={`/quotes/${quote._id}`} className="block focus-gold">
+                  <div className="flex items-start justify-between gap-3 mb-2.5">
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm flex items-center gap-2">
+                        <span className="truncate">{quote.customerName}</span>
+                        {!quote.clientEmailSent && (
+                          <MailX size={12} className="text-amber-400/80 flex-shrink-0" />
+                        )}
+                      </div>
+                      <div className="text-[11px] text-white/35 truncate mt-0.5">
+                        {quote.customerEmail}
+                      </div>
+                      <div className="mt-2">
+                        <AcceptanceBadge status={quote.acceptanceStatus} />
+                      </div>
                     </div>
-                    <div className="text-[11px] text-white/35 truncate mt-0.5">
-                      {quote.customerEmail}
-                    </div>
+                    <StatusBadge status={quote.status} />
                   </div>
-                  <StatusBadge status={quote.status} />
-                </div>
 
-                <div className="flex items-end justify-between gap-3">
-                  <div className="text-[11px] text-white/40 leading-relaxed min-w-0">
-                    {quote.eventType || "Event"} · {formatDate(quote.eventDate)}
-                    <br />
-                    {quote.guestCount} guests · {quote.barType}
-                  </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="font-serif font-bold text-luxury-gold tabular-nums">
-                      {money(quote.grandTotal)}
+                  <div className="flex items-end justify-between gap-3">
+                    <div className="text-[11px] text-white/40 leading-relaxed min-w-0">
+                      {quote.eventType || "Event"} · {formatDate(quote.eventDate)}
+                      <br />
+                      {quote.guestCount} guests · {quote.barType}
                     </div>
-                    <div className="text-[10px] text-white/25 mt-0.5">
-                      {relativeTime(quote.submittedAt)}
+                    <div className="text-right flex-shrink-0">
+                      <div className="font-serif font-bold text-luxury-gold tabular-nums">
+                        {money(quote.grandTotal)}
+                      </div>
+                      <div className="text-[10px] text-white/25 mt-0.5">
+                        {relativeTime(quote.submittedAt)}
+                      </div>
                     </div>
                   </div>
+                </Link>
+
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
+                  <button
+                    type="button"
+                    onClick={() => contract.openPreview(quote._id, quote.customerName)}
+                    disabled={contract.busyId === quote._id}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-white/10 text-[10px] uppercase tracking-widest font-semibold text-white/55 hover:border-luxury-gold/40 hover:text-luxury-gold transition-colors focus-gold disabled:opacity-40"
+                  >
+                    {contract.busyId === quote._id ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <FileText size={12} />
+                    )}
+                    View contract
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => contract.download(quote._id, quote.customerName)}
+                    disabled={contract.busyId === quote._id}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-white/10 text-[10px] uppercase tracking-widest font-semibold text-white/55 hover:border-luxury-gold/40 hover:text-luxury-gold transition-colors focus-gold disabled:opacity-40"
+                  >
+                    <Download size={12} />
+                    Download
+                  </button>
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
 
           <Pagination meta={meta} onPageChange={(next) => setParam("page", String(next))} />
         </>
       )}
+
+      <ContractPreview
+        preview={contract.preview}
+        onClose={contract.closePreview}
+        onDownload={contract.downloadPreview}
+      />
     </div>
   );
 }

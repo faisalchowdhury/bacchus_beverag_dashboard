@@ -3,11 +3,15 @@ import {
   LayoutDashboard,
   FileText,
   Users,
+  UsersRound,
   FileCog,
   UserCog,
   X,
   type LucideIcon,
 } from "lucide-react";
+
+import { useAuth } from "../auth/AuthContext";
+import { isAdmin } from "../types";
 
 export interface NavItem {
   label: string;
@@ -16,15 +20,28 @@ export interface NavItem {
   end?: boolean;
   /** Starts a new visual group in the sidebar. */
   groupStart?: boolean;
+  /** Hidden from staff — these areas are admin-only. */
+  adminOnly?: boolean;
 }
 
 export const NAV_ITEMS: NavItem[] = [
   { label: "Overview", path: "/", icon: LayoutDashboard, end: true },
   { label: "Quotes", path: "/quotes", icon: FileText },
-  { label: "Users", path: "/users", icon: Users },
-  { label: "Site Pages", path: "/settings", icon: FileCog, groupStart: true },
+  { label: "Team", path: "/staff", icon: UsersRound, adminOnly: true },
+  { label: "Users", path: "/users", icon: Users, adminOnly: true },
+  {
+    label: "Site Pages",
+    path: "/settings",
+    icon: FileCog,
+    groupStart: true,
+    adminOnly: true,
+  },
   { label: "My Account", path: "/account", icon: UserCog },
 ];
+
+/** The items this account may actually open. */
+export const visibleNavItems = (user: { role?: string } | null | undefined): NavItem[] =>
+  NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin(user));
 
 export default function Sidebar({
   open,
@@ -33,6 +50,9 @@ export default function Sidebar({
   open: boolean;
   onClose: () => void;
 }) {
+  const { user } = useAuth();
+  const items = visibleNavItems(user);
+
   return (
     <>
       {/* Backdrop, mobile only */}
@@ -55,7 +75,7 @@ export default function Sidebar({
               BACCHUS
             </span>
             <span className="text-[8px] tracking-[0.3em] text-luxury-gold font-sans font-semibold uppercase mt-1">
-              Admin
+              {isAdmin(user) ? "Admin" : "Team"}
             </span>
           </div>
           <button
@@ -69,7 +89,7 @@ export default function Sidebar({
         </div>
 
         <nav className="flex-1 overflow-y-auto px-3 py-5 space-y-1">
-          {NAV_ITEMS.map(({ label, path, icon: Icon, end, groupStart }) => (
+          {items.map(({ label, path, icon: Icon, end, groupStart }) => (
             <div key={path} className={groupStart ? "pt-4 mt-4 border-t border-white/5" : ""}>
               <NavLink
                 to={path}

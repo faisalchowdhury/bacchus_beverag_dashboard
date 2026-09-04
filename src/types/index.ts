@@ -23,6 +23,26 @@ export interface Pagination {
   totalItem?: number;
 }
 
+/* ── Roles ─────────────────────────────────────────────────────────── */
+
+/** Roles that may open the dashboard. Mirrors DASHBOARD_ROLES on the server. */
+export const DASHBOARD_ROLES = ["admin", "staff"] as const;
+export type DashboardRole = (typeof DASHBOARD_ROLES)[number];
+
+/** True when the account may open the dashboard at all. */
+export const hasDashboardAccess = (
+  user: { role?: string } | null | undefined,
+): boolean => DASHBOARD_ROLES.includes(user?.role as DashboardRole);
+
+/**
+ * True for admins only.
+ *
+ * Staff read the pipeline and work quotes; managing accounts, site content
+ * and anything that emails a client stays with admins.
+ */
+export const isAdmin = (user: { role?: string } | null | undefined): boolean =>
+  user?.role === "admin";
+
 /* ── Auth ──────────────────────────────────────────────────────────── */
 
 export interface AdminUser {
@@ -171,6 +191,16 @@ export interface QuoteBreakdown {
 export const QUOTE_STATUSES = ["New", "Contacted", "Won", "Lost"] as const;
 export type QuoteStatus = (typeof QUOTE_STATUSES)[number];
 
+/**
+ * What the client did with the estimate emailed to them.
+ *
+ * Distinct from the pipeline status above: that one is the venue's own view
+ * and is edited freely from here, whereas this records an action the client
+ * took and is read-only in the dashboard.
+ */
+export const QUOTE_ACCEPTANCE_STATUSES = ["Pending", "Accepted", "Declined"] as const;
+export type QuoteAcceptanceStatus = (typeof QUOTE_ACCEPTANCE_STATUSES)[number];
+
 /** The trimmed shape returned by the list endpoint. */
 export interface QuoteListItem {
   _id: string;
@@ -186,6 +216,9 @@ export interface QuoteListItem {
   status: QuoteStatus;
   clientEmailSent: boolean;
   ownerEmailSent: boolean;
+  /** Absent on quotes submitted before acceptance tracking existed. */
+  acceptanceStatus?: QuoteAcceptanceStatus;
+  acceptedAt?: string | null;
   submittedAt: string;
   createdAt: string;
 }
@@ -196,13 +229,63 @@ export interface QuoteDetail extends QuoteListItem {
   breakdown: QuoteBreakdown;
   adminNotes: string;
   updatedAt: string;
+
+  /** Acceptance audit trail. Populated once the client clicks Accept. */
+  acceptanceIp?: string;
+  acceptanceUserAgent?: string;
+  acceptanceNotifiedEmails?: string[];
+  acceptanceTokenExpiresAt?: string;
 }
 
 export interface QuoteStats {
   statusCounts: Record<QuoteStatus, number>;
+  acceptanceCounts: Record<QuoteAcceptanceStatus, number>;
   total: number;
   pipelineValue: number;
   averageValue: number;
   totalGuests: number;
+  acceptedCount: number;
+  /** Value of quotes the client has actually accepted. */
+  acceptedValue: number;
+  /** Percentage of quotes accepted, to one decimal place. */
+  acceptanceRate: number;
   recent: QuoteListItem[];
+}
+
+/* ── Staff ─────────────────────────────────────────────────────────── */
+
+/**
+ * A member of the venue team.
+ *
+ * Staff sign in to read the pipeline, and are the people copied on new-quote
+ * and quote-accepted notifications. Created by an admin — there is no
+ * self-registration onto this role.
+ */
+export interface StaffMember {
+  _id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  jobTitle?: string | null;
+  role: string;
+  isVerified: boolean;
+  isBlocked: boolean;
+  isDeleted: boolean;
+  notifyOnNewQuote: boolean;
+  notifyOnQuoteAccepted: boolean;
+  profilePicture?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Who is actually emailed for each event, as the server resolves it. */
+export interface NotificationRecipient {
+  name: string;
+  email: string;
+  role: string;
+}
+
+export interface NotificationRecipients {
+  newQuote: NotificationRecipient[];
+  quoteAccepted: NotificationRecipient[];
 }
