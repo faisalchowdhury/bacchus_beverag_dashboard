@@ -13,7 +13,11 @@ import {
   Send,
 } from "lucide-react";
 
-import { fetchQuote, resendAcceptanceLink, updateQuote } from "../../api/quotes";
+import {
+  fetchQuote,
+  resendAcceptanceLink,
+  updateQuote,
+} from "../../api/quotes";
 import { apiErrorMessage } from "../../api/axiosInstance";
 import StatusBadge from "../../components/StatusBadge";
 import AcceptanceBadge from "../../components/AcceptanceBadge";
@@ -21,7 +25,12 @@ import EmptyState from "../../components/EmptyState";
 import ContractActions from "../../components/ContractActions";
 import ContractPreview from "../../components/ContractPreview";
 import { useQuoteContract } from "../../hooks/useQuoteContract";
-import { formatDate, formatDateTime, formatTime, money } from "../../utils/format";
+import {
+  formatDate,
+  formatDateTime,
+  formatTime,
+  money,
+} from "../../utils/format";
 import { useAuth } from "../../auth/AuthContext";
 import { useToast } from "../../components/Toast";
 import {
@@ -56,7 +65,9 @@ function Facts({ rows }: { rows: [string, ReactNode][] }) {
           <dt className="text-[11px] uppercase tracking-wider text-white/35 font-medium sm:w-[42%] flex-shrink-0">
             {label}
           </dt>
-          <dd className="text-sm text-white/80 font-light break-words min-w-0">{value}</dd>
+          <dd className="text-sm text-white/80 font-light break-words min-w-0">
+            {value}
+          </dd>
         </div>
       ))}
     </dl>
@@ -98,7 +109,11 @@ export default function QuoteDetail() {
         setStatus(data.status);
         setNotes(data.adminNotes ?? "");
       })
-      .catch((err) => !cancelled && setError(apiErrorMessage(err, "Could not load the quote.")))
+      .catch(
+        (err) =>
+          !cancelled &&
+          setError(apiErrorMessage(err, "Could not load the quote.")),
+      )
       .finally(() => !cancelled && setLoading(false));
 
     return () => {
@@ -107,7 +122,9 @@ export default function QuoteDetail() {
   }, [id]);
 
   const dirty = useMemo(
-    () => Boolean(quote) && (status !== quote?.status || notes !== (quote?.adminNotes ?? "")),
+    () =>
+      Boolean(quote) &&
+      (status !== quote?.status || notes !== (quote?.adminNotes ?? "")),
     [quote, status, notes],
   );
 
@@ -116,7 +133,10 @@ export default function QuoteDetail() {
     setSaving(true);
     setSaveError(null);
     try {
-      const updated = await updateQuote(quote._id, { status, adminNotes: notes });
+      const updated = await updateQuote(quote._id, {
+        status,
+        adminNotes: notes,
+      });
       setQuote(updated);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
@@ -164,7 +184,10 @@ export default function QuoteDetail() {
   const s = quote.selections;
   const b = quote.breakdown;
   const isOpenBar = s.barType === "Open Bar";
-  const cocktailCount = Math.min(Math.max(Math.round(s.signatureCocktailCount) || 0, 0), 4);
+  const cocktailCount = Math.min(
+    Math.max(Math.round(s.signatureCocktailCount) || 0, 0),
+    4,
+  );
 
   return (
     <div className="space-y-5">
@@ -212,8 +235,9 @@ export default function QuoteDetail() {
         <div className="flex items-start gap-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.07] p-4">
           <MailX size={15} className="text-amber-400 mt-0.5 flex-shrink-0" />
           <p className="text-[12px] text-white/70 leading-relaxed">
-            The estimate email was <strong>not delivered</strong> to this client. They may be
-            waiting on a copy they will never receive — worth reaching out directly.
+            The estimate email was <strong>not delivered</strong> to this
+            client. They may be waiting on a copy they will never receive —
+            worth reaching out directly.
           </p>
         </div>
       )}
@@ -269,7 +293,10 @@ export default function QuoteDetail() {
                   "Service window",
                   `${formatTime(s.eventStartTime)} – ${formatTime(s.eventEndTime)} (${b.eventHours} hrs)`,
                 ],
-                ["Staffed hours", `${b.staffedHours} hrs (includes 1 hr setup + 1 hr teardown)`],
+                [
+                  "Staffed hours",
+                  `${b.staffedHours} hrs (includes 1 hr setup + 1 hr teardown)`,
+                ],
                 ["Total guests", `${s.guestCount} (including minors)`],
               ]}
             />
@@ -279,7 +306,10 @@ export default function QuoteDetail() {
             <Facts
               rows={[
                 ["Bar type", s.barType],
-                ["Glassware rental", s.glasswareRental ? "Bacchus rental" : "Client supplied"],
+                [
+                  "Glassware rental",
+                  s.glasswareRental ? "Bacchus rental" : "Client supplied",
+                ],
                 [
                   "Bar stations",
                   `${b.barStations} (1 permanent + ${s.additionalBarStations} additional)`,
@@ -289,10 +319,12 @@ export default function QuoteDetail() {
                   `${b.bartenderCount} (${b.baseBartenders} by guest count + ${b.additionalBartenders} for extra stations)`,
                 ],
                 ...(isOpenBar
-                  ? ([["Open Bar hours", `${b.openBarHours} of ${b.eventHours} hrs`]] as [
-                      string,
-                      ReactNode,
-                    ][])
+                  ? ([
+                      [
+                        "Open Bar hours",
+                        `${b.openBarHours} of ${b.eventHours} hrs`,
+                      ],
+                    ] as [string, ReactNode][])
                   : []),
               ]}
             />
@@ -326,36 +358,38 @@ export default function QuoteDetail() {
               ]}
             />
 
-            {isOpenBar && s.liquorMode === "Signature Cocktails" && cocktailCount > 0 && (
-              <div className="mt-5 pt-5 border-t border-white/5">
-                <h3 className="text-[10px] uppercase tracking-wider text-white/35 font-medium mb-3">
-                  Named cocktails
-                </h3>
-                <div className="space-y-2">
-                  {Array.from({ length: cocktailCount }).map((_, i) => {
-                    const cocktail = s.signatureCocktails?.[i];
-                    const named = cocktail?.name?.trim();
-                    return (
-                      <div
-                        key={i}
-                        className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 rounded-lg bg-luxury-black/50 border border-white/5 px-4 py-3"
-                      >
-                        <span
-                          className={`text-sm font-medium ${named ? "" : "text-amber-400/70 italic"}`}
+            {isOpenBar &&
+              s.liquorMode === "Signature Cocktails" &&
+              cocktailCount > 0 && (
+                <div className="mt-5 pt-5 border-t border-white/5">
+                  <h3 className="text-[10px] uppercase tracking-wider text-white/35 font-medium mb-3">
+                    Named cocktails
+                  </h3>
+                  <div className="space-y-2">
+                    {Array.from({ length: cocktailCount }).map((_, i) => {
+                      const cocktail = s.signatureCocktails?.[i];
+                      const named = cocktail?.name?.trim();
+                      return (
+                        <div
+                          key={i}
+                          className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-1 sm:gap-4 rounded-lg bg-luxury-black/50 border border-white/5 px-4 py-3"
                         >
-                          {named || `Cocktail #${i + 1} — unnamed`}
-                        </span>
-                        <span className="text-xs text-white/45 sm:text-right">
-                          {cocktail?.liquors?.length
-                            ? cocktail.liquors.join(" + ")
-                            : "No liquors chosen"}
-                        </span>
-                      </div>
-                    );
-                  })}
+                          <span
+                            className={`text-sm font-medium ${named ? "" : "text-amber-400/70 italic"}`}
+                          >
+                            {named || `Cocktail #${i + 1} — unnamed`}
+                          </span>
+                          <span className="text-xs text-white/45 sm:text-right">
+                            {cocktail?.liquors?.length
+                              ? cocktail.liquors.join(" + ")
+                              : "No liquors chosen"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </Section>
 
           {s.champagneToast && (
@@ -384,7 +418,10 @@ export default function QuoteDetail() {
                       ]
                     : [
                         ["Host tab requested", yesNo(s.openTab)],
-                        ["Tab restrictions", s.tabRestrictions?.trim() || "None specified"],
+                        [
+                          "Tab restrictions",
+                          s.tabRestrictions?.trim() || "None specified",
+                        ],
                       ]
                 }
               />
@@ -402,12 +439,17 @@ export default function QuoteDetail() {
                       className={`border-b border-white/5 ${item.informational ? "opacity-45" : ""}`}
                     >
                       <td className="px-5 sm:px-6 py-3 align-top">
-                        <div className="font-medium text-white/85">{item.label}</div>
+                        <div className="font-medium text-white/85">
+                          {item.label}
+                        </div>
                         {item.detail && (
                           <div className="text-[11px] text-white/35 mt-1 leading-snug">
                             {item.detail}
                             {item.taxExempt && (
-                              <span className="text-luxury-gold/70"> · tax exempt</span>
+                              <span className="text-luxury-gold/70">
+                                {" "}
+                                · tax exempt
+                              </span>
                             )}
                           </div>
                         )}
@@ -419,13 +461,17 @@ export default function QuoteDetail() {
                   ))}
 
                   <tr className="border-b border-white/5">
-                    <td className="px-5 sm:px-6 py-3 font-semibold">Subtotal</td>
+                    <td className="px-5 sm:px-6 py-3 font-semibold">
+                      Subtotal
+                    </td>
                     <td className="px-5 sm:px-6 py-3 text-right font-semibold tabular-nums">
                       {money(b.subtotal)}
                     </td>
                   </tr>
                   <tr>
-                    <td className="px-5 sm:px-6 py-2 text-white/45 text-xs">Gratuity</td>
+                    <td className="px-5 sm:px-6 py-2 text-white/45 text-xs">
+                      Gratuity
+                    </td>
                     <td className="px-5 sm:px-6 py-2 text-right text-white/45 text-xs tabular-nums">
                       {money(b.gratuity)}
                     </td>
@@ -443,8 +489,8 @@ export default function QuoteDetail() {
                       colSpan={2}
                       className="px-5 sm:px-6 pb-3 text-[10px] text-white/25 leading-snug"
                     >
-                      Tax base = subtotal + gratuity − {money(b.taxExemptTotal)} exempt
-                      (staffing, prepaid house account).
+                      Tax base = subtotal + gratuity − {money(b.taxExemptTotal)}{" "}
+                      exempt (staffing, prepaid house account).
                     </td>
                   </tr>
                   <tr className="bg-luxury-black/60">
@@ -463,8 +509,13 @@ export default function QuoteDetail() {
               <div className="mt-5 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] p-4 space-y-2">
                 {b.warnings.map((warning) => (
                   <div key={warning} className="flex items-start gap-2.5">
-                    <AlertTriangle size={12} className="text-amber-400 mt-1 flex-shrink-0" />
-                    <p className="text-[11px] text-white/60 leading-relaxed">{warning}</p>
+                    <AlertTriangle
+                      size={12}
+                      className="text-amber-400 mt-1 flex-shrink-0"
+                    />
+                    <p className="text-[11px] text-white/60 leading-relaxed">
+                      {warning}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -503,10 +554,9 @@ export default function QuoteDetail() {
                             </span>,
                           ],
                         ] as [string, ReactNode][])
-                      : ([["Contract sent to", "Nobody — the email failed"]] as [
-                          string,
-                          ReactNode,
-                        ][])),
+                      : ([
+                          ["Contract sent to", "Nobody — the email failed"],
+                        ] as [string, ReactNode][])),
                     ...(quote.acceptanceIp
                       ? ([
                           [
@@ -523,9 +573,9 @@ export default function QuoteDetail() {
             ) : (
               <>
                 <p className="text-[12px] text-white/50 leading-relaxed mb-4">
-                  This client has not accepted yet. Their estimate email carries an
-                  Accept button; accepting notifies the team and attaches the contract
-                  automatically.
+                  This client has not accepted yet. Their estimate email carries
+                  an Accept button; accepting notifies the team and attaches the
+                  contract automatically.
                 </p>
 
                 {quote.acceptanceTokenExpiresAt && (
@@ -550,7 +600,10 @@ export default function QuoteDetail() {
                         setQuote(await fetchQuote(quote._id));
                       } catch (err) {
                         toast.error(
-                          apiErrorMessage(err, "Could not resend the estimate."),
+                          apiErrorMessage(
+                            err,
+                            "Could not resend the estimate.",
+                          ),
                         );
                       } finally {
                         setResending(false);
@@ -612,7 +665,9 @@ export default function QuoteDetail() {
             />
 
             {saveError && (
-              <p className="text-[11px] text-amber-400 mt-3 leading-relaxed">{saveError}</p>
+              <p className="text-[11px] text-amber-400 mt-3 leading-relaxed">
+                {saveError}
+              </p>
             )}
 
             <button
@@ -640,7 +695,10 @@ export default function QuoteDetail() {
           <Section title="Record">
             <Facts
               rows={[
-                ["Quote ID", <span className="font-mono text-xs">{quote._id}</span>],
+                [
+                  "Quote ID",
+                  <span className="font-mono text-xs">{quote._id}</span>,
+                ],
                 ["Submitted", formatDateTime(quote.submittedAt)],
                 ["Last updated", formatDateTime(quote.updatedAt)],
               ]}

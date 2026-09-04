@@ -1,12 +1,11 @@
 // import { defineConfig } from "vite";
 // import react from "@vitejs/plugin-react";
 // import tailwindcss from "@tailwindcss/vite";
-
 // export default defineConfig({
 //   plugins: [react(), tailwindcss()],
 //   server: {
 //     // 4004 is the marketing site; the dashboard sits alongside it.
-//     port: 4010,
+//     port: 6003,
 //     host: true,
 //     cors: true,
 //   },
@@ -17,15 +16,12 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
-
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     port: 6003,
-
     // ✅ Allow your custom domain
     allowedHosts: ["faisal6003.ssh.bd"],
-
     // ✅ Required for external access
     host: true,
     cors: true,

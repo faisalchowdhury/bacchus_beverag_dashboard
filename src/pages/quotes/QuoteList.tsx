@@ -106,7 +106,11 @@ export default function QuoteList() {
         setQuotes(result.quotes);
         setMeta(result.pagination);
       })
-      .catch((err) => !cancelled && setError(apiErrorMessage(err, "Could not load quotes.")))
+      .catch(
+        (err) =>
+          !cancelled &&
+          setError(apiErrorMessage(err, "Could not load quotes.")),
+      )
       .finally(() => !cancelled && setLoading(false));
 
     return () => {
@@ -196,7 +200,9 @@ export default function QuoteList() {
 
           <button
             type="button"
-            onClick={() => setParam("sortOrder", sortOrder === "asc" ? "desc" : "asc")}
+            onClick={() =>
+              setParam("sortOrder", sortOrder === "asc" ? "desc" : "asc")
+            }
             title={sortOrder === "asc" ? "Ascending" : "Descending"}
             className="flex items-center gap-1.5 px-3 py-2.5 rounded-lg border border-white/10 text-xs text-white/60 hover:border-luxury-gold/40 hover:text-luxury-gold transition-colors focus-gold"
           >
@@ -227,7 +233,11 @@ export default function QuoteList() {
           ))}
         </div>
       ) : error ? (
-        <EmptyState icon={AlertTriangle} title="Could not load quotes" message={error} />
+        <EmptyState
+          icon={AlertTriangle}
+          title="Could not load quotes"
+          message={error}
+        />
       ) : quotes.length === 0 ? (
         <EmptyState
           icon={Inbox}
@@ -251,14 +261,14 @@ export default function QuoteList() {
                     "Guests",
                     "Bar type",
                     "Value",
-                    "Client",
+                    "Acceptance",
                     "Status",
                     "Contract",
                     "",
                   ].map((heading, i) => (
                     <th
                       key={heading || i}
-                      className={`px-5 py-3.5 text-[10px] uppercase tracking-widest text-white/35 font-semibold whitespace-nowrap ${
+                      className={`px-5 py-3.5 text-[10px] uppercase tracking-widest text-white/35 font-semiboldwhitespace-nowrap ${
                         i >= 2 && i <= 4 ? "text-right" : "text-left"
                       }`}
                     >
@@ -274,7 +284,10 @@ export default function QuoteList() {
                     className="border-b border-white/5 last:border-0 hover:bg-white/[0.03] transition-colors group"
                   >
                     <td className="px-5 py-4">
-                      <Link to={`/quotes/${quote._id}`} className="block focus-gold">
+                      <Link
+                        to={`/quotes/${quote._id}`}
+                        className="block focus-gold"
+                      >
                         <div className="font-medium flex items-center gap-2">
                           {quote.customerName}
                           {!quote.clientEmailSent && (
@@ -291,7 +304,9 @@ export default function QuoteList() {
                       </Link>
                     </td>
                     <td className="px-5 py-4">
-                      <div className="text-white/75">{quote.eventType || "—"}</div>
+                      <div className="text-white/75">
+                        {quote.eventType || "—"}
+                      </div>
                       <div className="text-[11px] text-white/35 mt-0.5">
                         {formatDate(quote.eventDate)}
                       </div>
@@ -360,7 +375,10 @@ export default function QuoteList() {
                       <div className="font-medium text-sm flex items-center gap-2">
                         <span className="truncate">{quote.customerName}</span>
                         {!quote.clientEmailSent && (
-                          <MailX size={12} className="text-amber-400/80 flex-shrink-0" />
+                          <MailX
+                            size={12}
+                            className="text-amber-400/80 flex-shrink-0"
+                          />
                         )}
                       </div>
                       <div className="text-[11px] text-white/35 truncate mt-0.5">
@@ -375,7 +393,8 @@ export default function QuoteList() {
 
                   <div className="flex items-end justify-between gap-3">
                     <div className="text-[11px] text-white/40 leading-relaxed min-w-0">
-                      {quote.eventType || "Event"} · {formatDate(quote.eventDate)}
+                      {quote.eventType || "Event"} ·{" "}
+                      {formatDate(quote.eventDate)}
                       <br />
                       {quote.guestCount} guests · {quote.barType}
                     </div>
@@ -393,7 +412,9 @@ export default function QuoteList() {
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/5">
                   <button
                     type="button"
-                    onClick={() => contract.openPreview(quote._id, quote.customerName)}
+                    onClick={() =>
+                      contract.openPreview(quote._id, quote.customerName)
+                    }
                     disabled={contract.busyId === quote._id}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-white/10 text-[10px] uppercase tracking-widest font-semibold text-white/55 hover:border-luxury-gold/40 hover:text-luxury-gold transition-colors focus-gold disabled:opacity-40"
                   >
@@ -406,7 +427,9 @@ export default function QuoteList() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => contract.download(quote._id, quote.customerName)}
+                    onClick={() =>
+                      contract.download(quote._id, quote.customerName)
+                    }
                     disabled={contract.busyId === quote._id}
                     className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-lg border border-white/10 text-[10px] uppercase tracking-widest font-semibold text-white/55 hover:border-luxury-gold/40 hover:text-luxury-gold transition-colors focus-gold disabled:opacity-40"
                   >
@@ -418,7 +441,10 @@ export default function QuoteList() {
             ))}
           </div>
 
-          <Pagination meta={meta} onPageChange={(next) => setParam("page", String(next))} />
+          <Pagination
+            meta={meta}
+            onPageChange={(next) => setParam("page", String(next))}
+          />
         </>
       )}
 

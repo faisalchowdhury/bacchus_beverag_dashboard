@@ -26,21 +26,30 @@ export interface QuoteListResult {
   pagination?: Pagination;
 }
 
-export async function fetchQuotes(params: QuoteListParams): Promise<QuoteListResult> {
+export async function fetchQuotes(
+  params: QuoteListParams,
+): Promise<QuoteListResult> {
   // Blank filters are dropped so they do not reach the API as empty strings.
   const query = Object.fromEntries(
-    Object.entries(params).filter(([, value]) => value !== "" && value !== undefined),
+    Object.entries(params).filter(
+      ([, value]) => value !== "" && value !== undefined,
+    ),
   );
 
-  const { data } = await api.get<ApiEnvelope<QuoteListItem[]>>("/api/v1/quote", {
-    params: query,
-  });
+  const { data } = await api.get<ApiEnvelope<QuoteListItem[]>>(
+    "/api/v1/quote",
+    {
+      params: query,
+    },
+  );
 
   return { quotes: data.data ?? [], pagination: data.pagination };
 }
 
 export async function fetchQuote(id: string): Promise<QuoteDetail> {
-  const { data } = await api.get<ApiEnvelope<QuoteDetail>>(`/api/v1/quote/${id}`);
+  const { data } = await api.get<ApiEnvelope<QuoteDetail>>(
+    `/api/v1/quote/${id}`,
+  );
   if (!data.data) throw new Error(data.message || "Quote not found.");
   return data.data;
 }
@@ -93,7 +102,10 @@ export async function fetchQuoteContract(
 
   return {
     blob: response.data,
-    fileName: fileNameFromDisposition(response.headers?.["content-disposition"], id),
+    fileName: fileNameFromDisposition(
+      response.headers?.["content-disposition"],
+      id,
+    ),
   };
 }
 
@@ -133,11 +145,14 @@ export async function resendAcceptanceLink(
   const { data } = await api.post<ApiEnvelope<ResendAcceptanceResult>>(
     `/api/v1/quote/${id}/resend-acceptance`,
   );
-  if (!data.data) throw new Error(data.message || "Could not resend the estimate.");
+  if (!data.data)
+    throw new Error(data.message || "Could not resend the estimate.");
   return data.data;
 }
 
 export async function fetchQuoteStats(): Promise<QuoteStats> {
-  const { data } = await api.get<ApiEnvelope<QuoteStats>>("/api/v1/quote/stats");
+  const { data } = await api.get<ApiEnvelope<QuoteStats>>(
+    "/api/v1/quote/stats",
+  );
   return data.data;
 }
