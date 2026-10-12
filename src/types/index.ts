@@ -157,6 +157,11 @@ export interface QuoteBreakdown {
   eventHours: number;
   staffedHours: number;
   openBarHours: number;
+  /* Absent on quotes stored before the alcohol service window existed. */
+  alcoholServiceHours?: number;
+  alcoholServiceStart?: string;
+  alcoholServiceEnd?: string;
+  cashBarRemainderHours?: number;
   barStations: number;
   baseBartenders: number;
   additionalBartenders: number;

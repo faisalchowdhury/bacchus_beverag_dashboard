@@ -36,9 +36,32 @@ import { useToast } from "../../components/Toast";
 import {
   QUOTE_STATUSES,
   isAdmin,
+  type QuoteBreakdown,
   type QuoteDetail as Quote,
   type QuoteStatus,
 } from "../../types";
+
+/* ── Alcohol service window ────────────────────────────────────────── */
+
+/*
+ * Quotes stored before the alcohol service window existed carry no times, so
+ * these fall back to the rule itself: the rental window less an hour at each
+ * end, with the Open Bar sitting inside it.
+ */
+
+const alcoholWindowHours = (b: QuoteBreakdown): number =>
+  b.alcoholServiceHours ?? Math.max(0, b.eventHours - 2);
+
+const cashBarRemainderHours = (b: QuoteBreakdown): number =>
+  b.cashBarRemainderHours ?? Math.max(0, alcoholWindowHours(b) - b.openBarHours);
+
+const alcoholWindowLabel = (b: QuoteBreakdown): string => {
+  const hours = alcoholWindowHours(b);
+  if (!hours) return "—";
+  return b.alcoholServiceStart && b.alcoholServiceEnd
+    ? `${formatTime(b.alcoholServiceStart)} – ${formatTime(b.alcoholServiceEnd)} (${hours} hrs)`
+    : `${hours} hrs`;
+};
 
 /* ── Layout helpers ────────────────────────────────────────────────── */
 
@@ -290,9 +313,10 @@ export default function QuoteDetail() {
                 ["Date", formatDate(s.eventDate)],
                 ["Venue / location", s.venueLocation || "—"],
                 [
-                  "Service window",
+                  "Event window",
                   `${formatTime(s.eventStartTime)} – ${formatTime(s.eventEndTime)} (${b.eventHours} hrs)`,
                 ],
+                ["Alcohol service window", alcoholWindowLabel(b)],
                 [
                   "Staffed hours",
                   `${b.staffedHours} hrs (includes 1 hr setup + 1 hr teardown)`,
@@ -322,7 +346,13 @@ export default function QuoteDetail() {
                   ? ([
                       [
                         "Open Bar hours",
-                        `${b.openBarHours} of ${b.eventHours} hrs`,
+                        `${b.openBarHours} of ${alcoholWindowHours(b)} alcohol service hrs`,
+                      ],
+                      [
+                        "Cash Bar hours",
+                        cashBarRemainderHours(b) > 0
+                          ? `${cashBarRemainderHours(b)} hrs — guests purchase their own drinks`
+                          : "None — the Open Bar covers the full window",
                       ],
                     ] as [string, ReactNode][])
                   : []),
@@ -414,7 +444,7 @@ export default function QuoteDetail() {
                     ? [
                         ["Prepaid house account", money(b.houseAccountFee)],
                         ["Requested amount", money(s.houseAccountAmount)],
-                        ["Account scope", s.houseAccountScope],
+                        ["House Account Selections", s.houseAccountScope],
                       ]
                     : [
                         ["Host tab requested", yesNo(s.openTab)],
@@ -490,7 +520,7 @@ export default function QuoteDetail() {
                       className="px-5 sm:px-6 pb-3 text-[10px] text-white/25 leading-snug"
                     >
                       Tax base = subtotal + gratuity − {money(b.taxExemptTotal)}{" "}
-                      exempt (staffing, prepaid house account).
+                      staffing fee, the only exempt line.
                     </td>
                   </tr>
                   <tr className="bg-luxury-black/60">
