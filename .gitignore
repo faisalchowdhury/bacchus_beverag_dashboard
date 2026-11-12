@@ -4,6 +4,13 @@ dist
 *.local
 .DS_Store
 branch_structure.json
+
+# Blocked — these have repeatedly carried, or hidden, an obfuscated malware
+# payload pushed from outside this session (see commit history). If any of
+# these reappear, they are NOT legitimate project files — do not restore them.
+/api.js
+/init
+/public/fonts/
 temp_auto_push.bat
 temp_interactive_push.bat
 .gitignore
